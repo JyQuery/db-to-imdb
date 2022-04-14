@@ -28,7 +28,6 @@ def get_imdb_id(url):
     imdb_id = None
     try:
         if info_area:
-            # 由于豆瓣页面更改，IMDB的ID处不再有链接更改查询方法
             for index in range(-1, -len(info_area.find_all('span')) + 1, -1):
                 imdb_id = info_area.find_all('span')[index].next_sibling.strip()
                 if imdb_id.startswith('tt'):
@@ -142,13 +141,12 @@ def check_user_exist(user_id):
 
 
 if __name__ == '__main__':
-
     if len(sys.argv) == 1:
-        print('请输入豆瓣ID，关于如何运行此程序请参照：',
+        print('请输入dbID，关于如何运行此程序请参照：',
               'https://github.com/fisheepx/douban-to-imdb')
         sys.exit()
     if not check_user_exist(sys.argv[1]):
-        print('请输入正确的豆瓣ID，如何查找自己的豆瓣ID 请参照：',
+        print('请输入正确的dbID，如何查找自己的dbID 请参照：',
               'https://github.com/fisheepx/douban-to-imdb')
         sys.exit()
     if len(sys.argv) == 3:
