@@ -1,12 +1,12 @@
-import os
 import sys
-import csv
 import requests
+import pandas as pd
+import time
+import random
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/537.36 (KHTML, like Gecko) ' \
-             'Chrome/47.0.2526.106 Safari/537.36 '
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36'
 START_DATE = '20050502'
 IS_OVER = False
 
@@ -41,13 +41,14 @@ def get_imdb_id(url):
         return imdb_id if not imdb_id or imdb_id.startswith('tt') else None
 
 
-def get_info(url):
-    info = []
+def get_info(url, page=None):
+    df = None
     r = requests.get(url, headers={'User-Agent': USER_AGENT})
     soup = BeautifulSoup(r.text, "lxml")
     movie_items = soup.find_all("div", {"class": "item"})
     if len(movie_items) > 0:
         for item in movie_items:
+            time.sleep(random.uniform(2, 7))
             # meta data
             douban_link = item.a['href']
             title = item.find("li", {"class": "title"}).em.text
@@ -74,11 +75,25 @@ def get_info(url):
                 IS_OVER = True
                 break
 
-            info.append([title, rating, imdb])
+            thisData = {'title': title,
+                        'rating': rating,
+                        'imdb': imdb if imdb is not None else "no imdb link",
+                        'date': comment_date,
+                        'comment': comment,
+                        'url': douban_link,
+                        'peopleUrl': url,
+                        'page': page
+                        }
+            print(thisData)
+            if df is None:
+                df = pd.DataFrame([thisData])
+            else:
+                newDf = pd.DataFrame([thisData])
+                df = pd.concat([df, newDf])
     else:
         return None
 
-    return info
+    return df
 
 
 def get_max_index(user_id):
@@ -110,14 +125,11 @@ def export(user_id):
         if IS_OVER:
             break
         print(f'开始处理第 {page_no} 页...')
-        info.extend(get_info(url))
+        newInfo = get_info(url, page_no)
+        if newInfo is not None:
+            newInfo.to_csv('result.csv', mode='a', index=False, header=False)
         page_no += 1
     print(f'处理完成, 总共处理了 {len(info)} 部电影')
-    file_name = os.path.dirname(os.path.abspath(__file__)) + '/movie.csv'
-    with open(file_name, 'w', encoding='utf-8') as f:
-        writer = csv.writer(f, lineterminator='\n')
-        writer.writerows(info)
-    print('保存电影评分至：', file_name)
 
 
 def check_user_exist(user_id):
@@ -130,6 +142,7 @@ def check_user_exist(user_id):
 
 
 if __name__ == '__main__':
+
     if len(sys.argv) == 1:
         print('请输入豆瓣ID，关于如何运行此程序请参照：',
               'https://github.com/fisheepx/douban-to-imdb')
