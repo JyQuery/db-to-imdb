@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36'
 START_DATE = '20050502'
+START_PAGE = 1
 IS_OVER = False
 
 
@@ -109,17 +110,17 @@ def get_max_index(user_id):
     return int(max_index)
 
 
-def url_generator(user_id):
+def url_generator(user_id, page=1):
     max_index = get_max_index(user_id)
-    for index in range(0, max_index * 15, 15):
+    for index in range((page-1) * 15, max_index * 15, 15):
         yield f"https://movie.douban.com/people/{user_id}/collect" \
               f"?start={index}&sort=time&rating=all&filter=all&mode=grid"
 
 
 def export(user_id):
-    urls = url_generator(user_id)
+    page_no = START_PAGE
+    urls = url_generator(user_id, page_no)
     info = []
-    page_no = 1
     for url in urls:
         if IS_OVER:
             break
