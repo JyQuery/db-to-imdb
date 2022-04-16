@@ -1,16 +1,14 @@
 import sys
-import requests
 import pandas as pd
 import time
 import random
-from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 START_DATE = '20050502'
-START_PAGE = 4
+START_PAGE = 1
 ITEM_PER_PAGE = 15
 
 
