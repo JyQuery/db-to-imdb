@@ -124,7 +124,6 @@ def url_generator(user_id, page=1):
 def export():
     page_no = START_PAGE
     urls = url_generator(DB_USER, page_no)
-    info = []
     for url in urls:
         if IS_OVER:
             break

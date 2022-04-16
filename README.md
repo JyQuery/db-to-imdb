@@ -1,13 +1,17 @@
-# db
+# db movie to imdb & db book to goodreads
 
-retrieve your rating details from db.
+Retrieve your rating details from db, and mark them on imdb or goodreads.
 
-forked from https://github.com/fisheepx/douban-to-imdb
+Forked from https://github.com/fisheepx/douban-to-imdb
 
-
+## dbmovie_to_csv.py
 Changes:
 - save csv for each page, instead of saving after retrieving all the data.
-- add more contents to the csv file. 
-- add exception handling if ip is banned by the service provider.
-- add mark in reserved order on imdb
-- default imdb star is 2 times of the db star. If there is no star on db, mark it 1 star on imdb.
+- add more contents to the csv file.
+- use config file instead of program params
+
+## csv_to_imdb.py
+- add mark in reserved order.
+
+## dbbook_to_csv.py
+Use webdriver to retrieve rated book details.
