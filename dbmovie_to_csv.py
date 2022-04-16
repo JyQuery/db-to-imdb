@@ -14,8 +14,9 @@ START_DATE = config['Movie']['AfterDate']
 DATE_FORMAT = '%Y-%m-%d'
 START_PAGE = int(config['Movie']['StartPage'])
 DB_USER = config['Movie']['DBUser']
+COLLECT = config['Movie'].getboolean('GetCollect')
+WISH = config['Movie'].getboolean('GetWish')
 IS_OVER = False
-TOTAL_MOVIE = 0
 
 
 def get_rating(rating_class):
@@ -47,7 +48,7 @@ def get_imdb_id(url):
         return imdb_id if not imdb_id or imdb_id.startswith('tt') else None
 
 
-def get_info(url, page=None):
+def get_info(url, page, category='collect'):
     page_data = []
     r = requests.get(url, headers={'User-Agent': USER_AGENT})
     soup = BeautifulSoup(r.text, "lxml")
@@ -95,13 +96,18 @@ def get_info(url, page=None):
             page_data.append(this_data)
 
         df = pd.DataFrame(page_data)
-        df.to_csv('movie.csv', mode='a', index=False, header=False)
-        global TOTAL_MOVIE
-        TOTAL_MOVIE += len(df.index)
+        match category:
+            case 'wish':
+                result_file = 'movie-wish.csv'
+            case _:
+                result_file = 'movie.csv'
+
+        df.to_csv(result_file, mode='a', index=False, header=False)
+        print(f"Saved {category} page {page}, total {len(df.index)} movies.")
 
 
-def get_max_index(user_id):
-    url = f"https://movie.douban.com/people/{user_id}/collect"
+def get_max_index(user_id, category='collect'):
+    url = f"https://movie.douban.com/people/{user_id}/{category}"
     r = requests.get(url, headers={'User-Agent': USER_AGENT})
     soup = BeautifulSoup(r.text, "lxml")
 
@@ -114,23 +120,22 @@ def get_max_index(user_id):
     return int(max_index)
 
 
-def url_generator(user_id, page=1):
-    max_index = get_max_index(user_id)
+def url_generator(user_id, page=1, category='collect'):
+    max_index = get_max_index(user_id, category)
     for index in range((page - 1) * 15, max_index * 15, 15):
-        yield f"https://movie.douban.com/people/{user_id}/collect" \
+        yield f"https://movie.douban.com/people/{user_id}/{category}" \
               f"?start={index}&sort=time&rating=all&filter=all&mode=grid"
 
 
-def export():
+def export(category='collect'):
     page_no = START_PAGE
-    urls = url_generator(DB_USER, page_no)
+    urls = url_generator(DB_USER, page_no, category)
     for url in urls:
         if IS_OVER:
             break
-        print(f'Getting page {page_no}: {url}...')
-        get_info(url, page_no)
+        print(f'Getting {category} page {page_no}: {url}...')
+        get_info(url, page_no, category)
         page_no += 1
-    print(f'Finished, total {TOTAL_MOVIE} movies')
 
 
 def check_user_exist(user_id):
@@ -148,5 +153,9 @@ if __name__ == '__main__':
               'https://github.com/fisheepx/douban-to-imdb')
         sys.exit()
 
-    print(f'Getting data after {START_DATE}...')
-    export()
+    if COLLECT:
+        print(f'Getting collection data after {START_DATE}...')
+        export('collect')
+    if WISH:
+        print(f'Getting wish data after {START_DATE}...')
+        export('wish')

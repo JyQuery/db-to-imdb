@@ -9,6 +9,7 @@ Changes:
 - save csv for each page, instead of saving after retrieving all the data.
 - add more contents to the csv file.
 - use config file instead of program params
+- collect 想看 list.
 
 ## csv_to_imdb.py
 - add mark in reserved order.
