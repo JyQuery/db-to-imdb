@@ -15,6 +15,7 @@ DATE_FORMAT = '%Y-%m-%d'
 START_PAGE = int(config['Movie']['StartPage'])
 DB_USER = config['Movie']['DBUser']
 IS_OVER = False
+TOTAL_MOVIE = 0
 
 
 def get_rating(rating_class):
@@ -47,10 +48,11 @@ def get_imdb_id(url):
 
 
 def get_info(url, page=None):
-    df = None
+    page_data = []
     r = requests.get(url, headers={'User-Agent': USER_AGENT})
     soup = BeautifulSoup(r.text, "lxml")
     movie_items = soup.find_all("div", {"class": "item"})
+
     if len(movie_items) > 0:
         for item in movie_items:
             time.sleep(random.uniform(2, 7))
@@ -80,25 +82,22 @@ def get_info(url, page=None):
                 IS_OVER = True
                 break
 
-            thisData = {'title': title,
-                        'rating': rating,
-                        'imdb': imdb if imdb is not None else "no imdb link",
-                        'date': comment_date,
-                        'comment': comment,
-                        'url': douban_link,
-                        'peopleUrl': url,
-                        'page': page
-                        }
-            print(thisData)
-            if df is None:
-                df = pd.DataFrame([thisData])
-            else:
-                newDf = pd.DataFrame([thisData])
-                df = pd.concat([df, newDf])
-    else:
-        return None
+            this_data = {'title': title,
+                         'rating': rating,
+                         'imdb': imdb if imdb is not None else "NO_IMDB_LINK",
+                         'date': comment_date,
+                         'comment': comment,
+                         'url': douban_link,
+                         'peopleUrl': url,
+                         'page': page
+                         }
+            print(this_data)
+            page_data.append(this_data)
 
-    return df
+        df = pd.DataFrame(page_data)
+        df.to_csv('movie.csv', mode='a', index=False, header=False)
+        global TOTAL_MOVIE
+        TOTAL_MOVIE += len(df.index)
 
 
 def get_max_index(user_id):
@@ -117,7 +116,7 @@ def get_max_index(user_id):
 
 def url_generator(user_id, page=1):
     max_index = get_max_index(user_id)
-    for index in range((page-1) * 15, max_index * 15, 15):
+    for index in range((page - 1) * 15, max_index * 15, 15):
         yield f"https://movie.douban.com/people/{user_id}/collect" \
               f"?start={index}&sort=time&rating=all&filter=all&mode=grid"
 
@@ -129,12 +128,10 @@ def export():
     for url in urls:
         if IS_OVER:
             break
-        print(f'开始处理第 {page_no} 页...')
-        newInfo = get_info(url, page_no)
-        if newInfo is not None:
-            newInfo.to_csv('movie.csv', mode='a', index=False, header=False)
+        print(f'Getting page {page_no}: {url}...')
+        get_info(url, page_no)
         page_no += 1
-    print(f'处理完成, 总共处理了 {len(info)} 部电影')
+    print(f'Finished, total {TOTAL_MOVIE} movies')
 
 
 def check_user_exist(user_id):
