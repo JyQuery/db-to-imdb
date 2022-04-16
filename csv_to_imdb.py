@@ -28,7 +28,7 @@ def login():
 
 
 def mark(is_unmark=False, rating_ajust=0):
-    df = pd.read_csv('result.csv')
+    df = pd.read_csv('movie.csv', header=None)
     df = df.iloc[::-1].reset_index(drop=True)
 
     driver = login()
