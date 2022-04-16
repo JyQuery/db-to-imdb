@@ -3,12 +3,17 @@ import requests
 import pandas as pd
 import time
 import random
+import configparser
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36'
-START_DATE = '20050502'
-START_PAGE = 1
+config = configparser.ConfigParser()
+config.read('config')
+USER_AGENT = config['Movie']['UserAgent']
+START_DATE = config['Movie']['AfterDate']
+DATE_FORMAT = '%Y-%m-%d'
+START_PAGE = int(config['Movie']['StartPage'])
+DB_USER = config['Movie']['DBUser']
 IS_OVER = False
 
 
@@ -70,7 +75,7 @@ def get_info(url, page=None):
 
             imdb = get_imdb_id(douban_link)
 
-            if datetime.strptime(comment_date, '%Y-%m-%d') <= datetime.strptime(START_DATE, '%Y%m%d'):
+            if datetime.strptime(comment_date, DATE_FORMAT) <= datetime.strptime(START_DATE, DATE_FORMAT):
                 global IS_OVER
                 IS_OVER = True
                 break
@@ -117,9 +122,9 @@ def url_generator(user_id, page=1):
               f"?start={index}&sort=time&rating=all&filter=all&mode=grid"
 
 
-def export(user_id):
+def export():
     page_no = START_PAGE
-    urls = url_generator(user_id, page_no)
+    urls = url_generator(DB_USER, page_no)
     info = []
     for url in urls:
         if IS_OVER:
@@ -142,15 +147,10 @@ def check_user_exist(user_id):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        print('请输入dbID，关于如何运行此程序请参照：',
-              'https://github.com/fisheepx/douban-to-imdb')
-        sys.exit()
-    if not check_user_exist(sys.argv[1]):
+    if not check_user_exist(DB_USER):
         print('请输入正确的dbID，如何查找自己的dbID 请参照：',
               'https://github.com/fisheepx/douban-to-imdb')
         sys.exit()
-    if len(sys.argv) == 3:
-        START_DATE = sys.argv[2]
-    print(f'开始抓取{START_DATE + "之后的" if START_DATE != "20050502" else "所有"}观影数据...')
-    export(sys.argv[1])
+
+    print(f'Getting data after {START_DATE}...')
+    export()
